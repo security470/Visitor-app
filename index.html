@@ -397,7 +397,7 @@ code { background: #e0eeff; padding: 2px 7px; border-radius: 4px; font-size: 12p
             <div class="setting-label">Apps Script Web App URL</div>
             <div class="setting-sub">Paste the URL after deploying your Google Apps Script.<br>Looks like: <code>https://script.google.com/macros/s/AKfy.../exec</code></div>
           </div>
-          <input type="text" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbwqDlLPrPlzoxF1ErG7h6Qs3jeC9Lr9-9-rQv38sOndXJ2J72Tb1SRQFcOW8ocYLn4N/exec" />
+          <input type="text" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyvEjdHCQaO1dNVR4lc_PE_CmVapcoQcftuY_3ViLtSoCbThprKmfD_XP87bOEBIAop/exec/exec" />
         </div>
         <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap">
           <button class="save-btn" onclick="saveGoogleConfig()">💾 Save</button>
@@ -464,7 +464,7 @@ var selectedPurpose  = '';
 var capturedPhoto    = '';
 var visitorLog       = [];
 var badgeCounter     = 1000;
-var googleConfig     = { scriptUrl: 'https://script.google.com/macros/s/AKfycbwqDlLPrPlzoxF1ErG7h6Qs3jeC9Lr9-9-rQv38sOndXJ2J72Tb1SRQFcOW8ocYLn4N/exec' };
+var googleConfig     = { scriptUrl: 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyvEjdHCQaO1dNVR4lc_PE_CmVapcoQcftuY_3ViLtSoCbThprKmfD_XP87bOEBIAop/exec', token: 'ABR-RIVKAH-2026' };
 var emailConfig      = { publicKey: 'FuiMyKpK-A9_aJlup', serviceId: 'service_3onrikl', templateId: 'V470' };
 
 // ─── BOOT ─────────────────────────────────────────────────────
@@ -652,6 +652,7 @@ function testEmail() {
 function syncToGoogle(visitor) {
   if (!googleConfig.scriptUrl) return Promise.resolve({ skipped: true });
   var payload = {
+    token:        googleConfig.token,
     action:       'checkin',
     badgeId:      visitor.id,
     timestamp:    visitor.timestamp,
