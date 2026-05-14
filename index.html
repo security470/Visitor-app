@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Visitor Check-In — Associated Beth Rivkah Schools</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f4f8; min-height: 100vh; }
+.app { max-width: 920px; margin: 0 auto; padding: 20px; }
+
+.header { background: #1a3a5c; color: white; border-radius: 16px; padding: 18px 24px;
+  margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo-wrap { width: 56px; height: 56px; background: white; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+.header-school { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.65; margin-bottom: 3px; }
+.header h1 { font-size: 19px; font-weight: 700; }
+.clock-time { font-size: 26px; font-weight: 300; letter-spacing: -0.5px; text-align: right; }
+.clock-date { font-size: 12px; opacity: 0.6; margin-top: 2px; text-align: right; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.tab { flex: 1; padding: 11px 8px; border: 1.5px solid #d0daea; border-radius: 10px;
+  background: white; font-size: 13px; font-weight: 600; color: #5a7496;
+  cursor: pointer; text-align: center; transition: all 0.15s; }
+.tab.active { background: #1a3a5c; color: white; border-color: #1a3a5c; }
+
+.card { background: white; border-radius: 14px; border: 1px solid #e2eaf4; padding: 22px; margin-bottom: 14px; }
+.card-title { font-size: 15px; font-weight: 700; color: #1a3a5c; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+.step-num { width: 26px; height: 26px; background: #1a3a5c; color: white; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+label { font-size: 12px; font-weight: 600; color: #5a7496; text-transform: uppercase; letter-spacing: 0.4px; }
+input[type=text], input[type=tel], input[type=email], select, textarea {
+  border: 1.5px solid #d0daea; border-radius: 8px; padding: 10px 12px;
+  font-size: 15px; color: #1a3a5c; outline: none; width: 100%; font-family: inherit; background: white; }
+input:focus, select:focus, textarea:focus { border-color: #1a3a5c; box-shadow: 0 0 0 3px rgba(26,58,92,0.1); }
+textarea { resize: none; height: 68px; }
+.required { color: #c0392b; }
+
+.camera-area { border: 2px dashed #c0d0e8; border-radius: 12px; padding: 24px;
+  text-align: center; background: #f7fafd; cursor: pointer; transition: all 0.15s; }
+.camera-area:hover { border-color: #1a3a5c; background: #eef4fb; }
+.camera-icon { font-size: 38px; margin-bottom: 10px; }
+.camera-area p { font-size: 14px; color: #5a7496; font-weight: 500; }
+.camera-area small { font-size: 12px; color: #8aa5c0; margin-top: 4px; display: block; }
+#cameraInput, #logoInput { display: none; }
+.id-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; }
+.retake-btn { margin-top: 10px; background: none; border: 1.5px solid #d0daea; border-radius: 8px;
+  padding: 7px 16px; font-size: 13px; cursor: pointer; color: #5a7496; font-family: inherit; }
+
+.purpose-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.purpose-btn { border: 1.5px solid #d0daea; border-radius: 10px; padding: 12px 8px;
+  text-align: center; cursor: pointer; background: white; transition: all 0.15s;
+  font-size: 13px; color: #5a7496; font-weight: 600; font-family: inherit; width: 100%; }
+.purpose-btn.selected { border-color: #1a3a5c; background: #eef4fb; color: #1a3a5c; }
+.purpose-icon { font-size: 22px; display: block; margin-bottom: 5px; }
+
+/* sync status banner */
+.sync-banner { border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;
+  font-size: 13px; display: flex; align-items: center; gap: 10px; }
+.sync-banner.warning { background: #fff8e1; border: 1.5px solid #f5c842; color: #7a6020; }
+.sync-banner.success { background: #e8f5e9; border: 1.5px solid #66bb6a; color: #1a5c2a; }
+.sync-banner.error   { background: #fdecea; border: 1.5px solid #ef9a9a; color: #7a1c1c; }
+.sync-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.sync-dot.green  { background: #4caf50; }
+.sync-dot.yellow { background: #ffc107; }
+.sync-dot.red    { background: #f44336; }
+
+.submit-btn { width: 100%; background: #1a3a5c; color: white; border: none; border-radius: 12px;
+  padding: 16px; font-size: 17px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+  margin-top: 6px; font-family: inherit; }
+.submit-btn:hover { background: #0f2840; }
+.submit-btn:disabled { background: #8aa5c0; cursor: not-allowed; }
+
+/* badge */
+.badge-container { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.badge { width: 360px; background: white; border: 3px solid #1a3a5c; border-radius: 16px;
+  overflow: hidden; font-family: 'Helvetica Neue', Arial, sans-serif;
+  box-shadow: 0 4px 24px rgba(26,58,92,0.15); }
+.badge-header { background: #1a3a5c; color: white; padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+.badge-logo-wrap { width: 44px; height: 44px; background: white; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.badge-logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+.badge-school-name { font-size: 12px; font-weight: 800; letter-spacing: 0.5px; line-height: 1.3; }
+.badge-visitor-label { font-size: 10px; opacity: 0.65; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+.badge-body { padding: 16px; display: flex; gap: 14px; align-items: flex-start; }
+.badge-photo { width: 84px; height: 84px; border-radius: 10px; object-fit: cover; border: 2px solid #e2eaf4; flex-shrink: 0; }
+.badge-photo-placeholder { width: 84px; height: 84px; border-radius: 10px; background: #eef4fb;
+  border: 2px solid #e2eaf4; display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; }
+.badge-info { flex: 1; min-width: 0; }
+.badge-name { font-size: 19px; font-weight: 800; color: #1a3a5c; line-height: 1.2; word-break: break-word; }
+.badge-field { font-size: 12px; color: #5a7496; margin-top: 7px; line-height: 1.4; }
+.badge-field strong { color: #2c5282; font-weight: 700; display: block; font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1px; }
+.badge-footer { background: #f0f4f8; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2eaf4; }
+.badge-id { font-size: 11px; color: #8aa5c0; font-weight: 700; letter-spacing: 1px; font-family: monospace; }
+.badge-date { font-size: 11px; color: #8aa5c0; }
+.badge-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.print-btn { background: #1a3a5c; color: white; border: none; border-radius: 10px; padding: 12px 28px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.new-btn { background: none; border: 2px solid #1a3a5c; color: #1a3a5c; border-radius: 10px; padding: 12px 28px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.badge-hint { font-size: 12px; color: #8aa5c0; text-align: center; max-width: 320px; line-height: 1.6; }
+
+/* logo upload */
+.logo-upload-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  background: #f7fafd; border: 1.5px dashed #c0d0e8; border-radius: 10px; margin-bottom: 16px; cursor: pointer; }
+.logo-upload-row:hover { border-color: #1a3a5c; background: #eef4fb; }
+.logo-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: contain; background: white; border: 1px solid #e2eaf4; padding: 2px; display: none; }
+.logo-upload-text { font-size: 13px; font-weight: 600; color: #1a3a5c; }
+.logo-upload-sub { font-size: 11px; color: #8aa5c0; }
+
+/* log */
+.log-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.stat-card { background: #f7fafd; border-radius: 10px; padding: 12px 14px; border: 1px solid #e2eaf4; }
+.stat-num { font-size: 24px; font-weight: 800; color: #1a3a5c; }
+.stat-label { font-size: 11px; color: #8aa5c0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+.log-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.log-controls input { flex: 1; min-width: 160px; font-size: 14px; border: 1.5px solid #d0daea; border-radius: 8px; padding: 8px 12px; }
+.export-btn { background: #1a3a5c; color: white; border: none; border-radius: 8px;
+  padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.log-table th { text-align: left; font-size: 11px; font-weight: 700; color: #8aa5c0;
+  text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; border-bottom: 1.5px solid #e2eaf4; }
+.log-table td { padding: 11px 10px; border-bottom: 1px solid #f0f4f8; color: #2c5282; vertical-align: top; }
+.log-table tr:last-child td { border-bottom: none; }
+.log-empty { text-align: center; padding: 48px; color: #8aa5c0; font-size: 14px; }
+.purpose-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #eef4fb; color: #2c5282; }
+.synced-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4caf50; margin-right: 5px; }
+.unsynced-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ffc107; margin-right: 5px; }
+
+/* settings */
+.settings-section { margin-bottom: 24px; }
+.settings-section h3 { font-size: 13px; font-weight: 700; color: #8aa5c0; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2eaf4; }
+.setting-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 14px 0; border-bottom: 1px solid #f5f7fa; }
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 14px; font-weight: 600; color: #1a3a5c; }
+.setting-sub { font-size: 12px; color: #8aa5c0; margin-top: 3px; line-height: 1.5; }
+.setting-row input { width: 280px; font-size: 14px; border: 1.5px solid #d0daea; border-radius: 8px; padding: 8px 12px; }
+.save-btn { background: #1a3a5c; color: white; border: none; border-radius: 8px;
+  padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.test-btn { background: #2e6da4; color: white; border: none; border-radius: 8px;
+  padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.info-box { background: #f0f7ff; border-radius: 10px; padding: 16px; border: 1px solid #c0d8f0; margin-top: 14px; }
+.info-box strong { font-size: 13px; color: #1a3a5c; display: block; margin-bottom: 10px; }
+.info-box ol { font-size: 13px; color: #3a6a8c; padding-left: 18px; line-height: 2.1; }
+code { background: #e0eeff; padding: 2px 7px; border-radius: 4px; font-size: 12px; font-family: monospace; }
+
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+  background: #1a7a3c; color: white; padding: 12px 24px; border-radius: 10px;
+  font-size: 14px; font-weight: 600; opacity: 0; transition: opacity 0.3s;
+  z-index: 9999; pointer-events: none; white-space: nowrap; }
+.toast.err { background: #c0392b; }
+.toast.show { opacity: 1; }
+
+@media print {
+  body * { visibility: hidden !important; }
+  #printBadge, #printBadge * { visibility: visible !important; }
+  #printBadge { position: fixed !important; left: 50% !important; top: 20px !important;
+    transform: translateX(-50%) !important; box-shadow: none !important;
+    border: 3px solid #000 !important; width: 3.5in !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-wrap" id="headerLogoWrap">
+        <span style="font-size:26px">🏫</span>
+      </div>
+      <div>
+        <div class="header-school">Associated Beth Rivkah Schools</div>
+        <h1>Visitor Check-In</h1>
+      </div>
+    </div>
+    <div>
+      <div class="clock-time" id="clockTime">--:--</div>
+      <div class="clock-date" id="clockDate"></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('intake')">➕ New Visitor</div>
+    <div class="tab" onclick="showTab('badge')">🪪 Badge</div>
+    <div class="tab" onclick="showTab('log')">📋 Log</div>
+    <div class="tab" onclick="showTab('settings')">⚙️ Settings</div>
+  </div>
+
+  <!-- ══ INTAKE ══ -->
+  <div id="tab-intake">
+    <div id="syncStatusBanner" class="sync-banner warning">
+      <div class="sync-dot yellow"></div>
+      <span>Google Sheets sync not configured — go to <strong>Settings → Google Drive Sync</strong> to connect.</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="step-num">1</span> Capture ID Photo <span style="font-size:12px;color:#8aa5c0;font-weight:400;margin-left:4px">(optional)</span></div>
+      <div class="camera-area" id="cameraArea" onclick="document.getElementById('cameraInput').click()">
+        <div id="cameraPrompt">
+          <div class="camera-icon">📷</div>
+          <p>Tap to photograph visitor's ID</p>
+          <small>Saved automatically to Google Drive on check-in</small>
+        </div>
+        <img id="idPreview" class="id-preview" style="display:none" alt="ID photo" />
+      </div>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handlePhoto(event)" />
+      <button id="retakeBtn" class="retake-btn" style="display:none" onclick="retakePhoto()">↺ Retake Photo</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="step-num">2</span> Visitor Information</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>First Name <span class="required">*</span></label>
+          <input type="text" id="firstName" placeholder="Jane" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>Last Name <span class="required">*</span></label>
+          <input type="text" id="lastName" placeholder="Smith" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="phone" placeholder="(555) 000-0000" />
+        </div>
+        <div class="form-group">
+          <label>Vehicle License Plate</label>
+          <input type="text" id="licensePlate" placeholder="ABC-1234" />
+        </div>
+        <div class="form-group full">
+          <label>Visiting Staff / Teacher <span class="required">*</span></label>
+          <input type="text" id="visitingStaff" placeholder="Mrs. Cohen — Grade 3" autocomplete="off" />
+        </div>
+        <div class="form-group full">
+          <label>Staff Email (notification + log) <span class="required">*</span></label>
+          <input type="email" id="staffEmail" placeholder="teacher@bethrivkah.edu" autocomplete="off" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="step-num">3</span> Purpose of Visit</div>
+      <div class="purpose-grid">
+        <button class="purpose-btn" onclick="selectPurpose(this,'Drop off / Pick up')"><span class="purpose-icon">🚗</span>Drop off / Pick up</button>
+        <button class="purpose-btn" onclick="selectPurpose(this,'Meeting')"><span class="purpose-icon">🤝</span>Meeting</button>
+        <button class="purpose-btn" onclick="selectPurpose(this,'Volunteering')"><span class="purpose-icon">🙋</span>Volunteering</button>
+        <button class="purpose-btn" onclick="selectPurpose(this,'Delivery')"><span class="purpose-icon">📦</span>Delivery</button>
+        <button class="purpose-btn" onclick="selectPurpose(this,'Event')"><span class="purpose-icon">🎉</span>Event</button>
+        <button class="purpose-btn" onclick="selectPurpose(this,'Other')"><span class="purpose-icon">💬</span>Other</button>
+      </div>
+      <div id="otherNote" style="margin-top:12px;display:none">
+        <label style="font-size:12px;color:#5a7496;font-weight:600;text-transform:uppercase;letter-spacing:0.4px">Additional Notes</label>
+        <textarea id="notes" placeholder="Please describe your visit..." style="margin-top:6px"></textarea>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">✓ Complete Check-In &amp; Generate Badge</button>
+  </div>
+
+  <!-- ══ BADGE ══ -->
+  <div id="tab-badge" style="display:none">
+    <div class="card">
+      <div class="card-title">🖼 School Logo</div>
+      <div class="logo-upload-row" onclick="document.getElementById('logoInput').click()">
+        <img id="logoThumb" class="logo-thumb" alt="Logo" />
+        <span id="logoPlaceholder" style="font-size:28px">🏫</span>
+        <div>
+          <div class="logo-upload-text">Upload School Logo</div>
+          <div class="logo-upload-sub">PNG or JPG · Saved in browser · Appears on every badge</div>
+        </div>
+      </div>
+      <input type="file" id="logoInput" accept="image/png,image/jpeg,image/gif,image/svg+xml" onchange="handleLogo(event)" />
+    </div>
+
+    <div class="card">
+      <div class="card-title">🪪 Visitor Badge</div>
+      <div class="badge-container">
+        <div class="badge" id="printBadge">
+          <div class="badge-header">
+            <div class="badge-logo-wrap" id="badgeLogoWrap">
+              <span id="badgeLogoFallback" style="font-size:22px">🏫</span>
+              <img id="badgeLogoImg" style="display:none;width:100%;height:100%;object-fit:contain" alt="logo" />
+            </div>
+            <div>
+              <div class="badge-school-name">Associated Beth Rivkah Schools</div>
+              <div class="badge-visitor-label">Authorized Visitor Pass</div>
+            </div>
+          </div>
+          <div class="badge-body">
+            <div>
+              <div class="badge-photo-placeholder" id="badgePhotoPlaceholder">👤</div>
+              <img id="badgePhotoImg" class="badge-photo" style="display:none" alt="Visitor" />
+            </div>
+            <div class="badge-info">
+              <div class="badge-name" id="badgeName">—</div>
+              <div class="badge-field"><strong>Visiting</strong><span id="badgeVisiting">—</span></div>
+              <div class="badge-field"><strong>Purpose</strong><span id="badgePurpose">—</span></div>
+              <div class="badge-field"><strong>Time In</strong><span id="badgeTime">—</span></div>
+            </div>
+          </div>
+          <div class="badge-footer">
+            <span class="badge-id" id="badgeId">VIS-—</span>
+            <span class="badge-date" id="badgeDate">—</span>
+          </div>
+        </div>
+        <div class="badge-actions">
+          <button class="print-btn" onclick="window.print()">🖨 Print Badge</button>
+          <button class="new-btn" onclick="newVisitor()">+ New Visitor</button>
+        </div>
+        <p class="badge-hint">Use the browser print dialog for any connected printer. For label printers, match paper size to your label stock.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LOG ══ -->
+  <div id="tab-log" style="display:none">
+    <div class="card">
+      <div class="log-stats">
+        <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total Today</div></div>
+        <div class="stat-card"><div class="stat-num" id="statSynced">0</div><div class="stat-label">Synced to Sheets</div></div>
+        <div class="stat-card"><div class="stat-num" id="statPurpose">—</div><div class="stat-label">Top Purpose</div></div>
+      </div>
+      <div class="log-controls">
+        <input type="text" id="logSearch" placeholder="🔍 Search visitors..." oninput="renderLog()" />
+        <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="export-btn" style="background:#2e6da4" onclick="retrySyncAll()">↺ Retry Sync</button>
+      </div>
+      <div id="logContent"><div class="log-empty">No visitors checked in yet today.</div></div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS ══ -->
+  <div id="tab-settings" style="display:none">
+    <div class="card">
+
+      <div class="settings-section">
+        <h3>☁️ Google Drive Sync</h3>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Apps Script Web App URL</div>
+            <div class="setting-sub">Paste the URL after deploying your Google Apps Script.<br>Looks like: <code>https://script.google.com/macros/s/AKfy.../exec</code></div>
+          </div>
+          <input type="text" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" />
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap">
+          <button class="save-btn" onclick="saveGoogleConfig()">💾 Save</button>
+          <button class="test-btn" onclick="testGoogleConnection()">🔗 Test Connection</button>
+          <span id="googleSavedMsg" style="font-size:13px;color:#1a7a3c;font-weight:600;display:none">✓ Saved!</span>
+        </div>
+        <div class="info-box">
+          <strong>📋 One-time Google Apps Script setup (5 minutes)</strong>
+          <ol>
+            <li>Go to <strong>script.google.com</strong> → click <strong>New Project</strong></li>
+            <li>Delete all code in the editor, paste in the <code>GoogleAppsScript_Code.js</code> file provided</li>
+            <li>Click <strong>Run → setupManually</strong> (first time only — authorizes Drive + Sheets access)</li>
+            <li>Click <strong>Deploy → New Deployment</strong></li>
+            <li>Type: <strong>Web App</strong> · Execute as: <strong>Me</strong> · Who has access: <strong>Anyone</strong></li>
+            <li>Click <strong>Deploy</strong> → copy the Web App URL</li>
+            <li>Paste that URL into the field above and click Save</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>📧 Email Notifications (EmailJS)</h3>
+        <div class="setting-row">
+          <div><div class="setting-label">Public Key</div><div class="setting-sub">EmailJS → Account → API Keys</div></div>
+          <input type="text" id="cfgPublicKey" placeholder="user_xxxxxxxxxxxx" />
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Service ID</div><div class="setting-sub">EmailJS → Email Services</div></div>
+          <input type="text" id="cfgServiceId" placeholder="service_xxxxxxx" />
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Template ID</div><div class="setting-sub">EmailJS → Email Templates</div></div>
+          <input type="text" id="cfgTemplateId" placeholder="template_xxxxxxx" />
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap">
+          <button class="save-btn" onclick="saveEmailConfig()">💾 Save</button>
+          <button class="test-btn" onclick="testEmail()">📤 Send Test</button>
+          <span id="emailSavedMsg" style="font-size:13px;color:#1a7a3c;font-weight:600;display:none">✓ Saved!</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>🗂 Data</h3>
+        <div class="setting-row">
+          <div><div class="setting-label">Export visitor log</div><div class="setting-sub">Download CSV of all local records</div></div>
+          <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Clear today's log</div><div class="setting-sub">Removes local records only — Google Sheet is not affected</div></div>
+          <button onclick="clearLog()" style="background:none;border:1.5px solid #e05050;color:#c0392b;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit">🗑 Clear</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────
+var selectedPurpose  = '';
+var capturedPhoto    = '';
+var visitorLog       = [];
+var badgeCounter     = 1000;
+var googleConfig     = { scriptUrl: '' };
+var emailConfig      = { publicKey: '', serviceId: '', templateId: '' };
+
+// ─── BOOT ─────────────────────────────────────────────────────
+(function() {
+  loadStorage();
+  tick();
+  setInterval(tick, 1000);
+  updateSyncBanner();
+})();
+
+function todayKey() { return new Date().toISOString().slice(0,10); }
+
+function loadStorage() {
+  try {
+    var logo = localStorage.getItem('abr_logo');
+    if (logo) applyLogo(logo);
+
+    var gc = localStorage.getItem('abr_google_config');
+    if (gc) {
+      googleConfig = JSON.parse(gc);
+      document.getElementById('cfgScriptUrl').value = googleConfig.scriptUrl || '';
+    }
+
+    var ec = localStorage.getItem('abr_email_config');
+    if (ec) {
+      emailConfig = JSON.parse(ec);
+      document.getElementById('cfgPublicKey').value  = emailConfig.publicKey  || '';
+      document.getElementById('cfgServiceId').value  = emailConfig.serviceId  || '';
+      document.getElementById('cfgTemplateId').value = emailConfig.templateId || '';
+    }
+
+    var log = localStorage.getItem('abr_log_' + todayKey());
+    if (log) {
+      visitorLog = JSON.parse(log);
+      if (visitorLog.length) {
+        var ids = visitorLog.map(function(v){ return parseInt(v.id.replace('VIS-',''))||0; });
+        badgeCounter = Math.max(badgeCounter, Math.max.apply(null, ids));
+      }
+    }
+  } catch(e) {}
+}
+
+function saveLog() {
+  try { localStorage.setItem('abr_log_' + todayKey(), JSON.stringify(visitorLog)); } catch(e) {}
+}
+
+// ─── CLOCK ────────────────────────────────────────────────────
+function tick() {
+  var now = new Date();
+  document.getElementById('clockTime').textContent = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('clockDate').textContent = now.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric',year:'numeric'});
+}
+
+// ─── TABS ─────────────────────────────────────────────────────
+function showTab(tab) {
+  ['intake','badge','log','settings'].forEach(function(t) {
+    document.getElementById('tab-'+t).style.display = t===tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(function(el,i) {
+    el.classList.toggle('active', ['intake','badge','log','settings'][i]===tab);
+  });
+  if (tab==='log') renderLog();
+}
+
+// ─── SYNC BANNER ─────────────────────────────────────────────
+function updateSyncBanner() {
+  var b  = document.getElementById('syncStatusBanner');
+  var dot = b.querySelector('.sync-dot');
+  if (googleConfig.scriptUrl) {
+    b.className = 'sync-banner success';
+    dot.className = 'sync-dot green';
+    b.querySelector('span').innerHTML = 'Google Drive sync active — visitor data and photos save automatically to Google Sheets &amp; Drive.';
+  } else {
+    b.className = 'sync-banner warning';
+    dot.className = 'sync-dot yellow';
+    b.querySelector('span').innerHTML = 'Google Sheets sync not configured — go to <strong>Settings → Google Drive Sync</strong> to connect.';
+  }
+}
+
+// ─── PHOTO ───────────────────────────────────────────────────
+function handlePhoto(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    capturedPhoto = ev.target.result;
+    document.getElementById('idPreview').src = capturedPhoto;
+    document.getElementById('idPreview').style.display = 'block';
+    document.getElementById('cameraPrompt').style.display = 'none';
+    document.getElementById('retakeBtn').style.display = 'inline-block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function retakePhoto() {
+  capturedPhoto = '';
+  document.getElementById('idPreview').style.display = 'none';
+  document.getElementById('cameraPrompt').style.display = 'block';
+  document.getElementById('retakeBtn').style.display = 'none';
+  document.getElementById('cameraInput').value = '';
+}
+
+// ─── LOGO ────────────────────────────────────────────────────
+function handleLogo(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    applyLogo(ev.target.result);
+    try { localStorage.setItem('abr_logo', ev.target.result); } catch(e) {}
+    showToast('Logo saved!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyLogo(src) {
+  // Badge tab thumb
+  var thumb = document.getElementById('logoThumb');
+  thumb.src = src; thumb.style.display = 'block';
+  document.getElementById('logoPlaceholder').style.display = 'none';
+  // Badge header
+  document.getElementById('badgeLogoImg').src = src;
+  document.getElementById('badgeLogoImg').style.display = 'block';
+  document.getElementById('badgeLogoFallback').style.display = 'none';
+  // Main header
+  document.getElementById('headerLogoWrap').innerHTML =
+    '<img src="'+src+'" style="width:100%;height:100%;object-fit:contain" alt="logo">';
+}
+
+// ─── PURPOSE ─────────────────────────────────────────────────
+function selectPurpose(el, val) {
+  document.querySelectorAll('.purpose-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedPurpose = val;
+  document.getElementById('otherNote').style.display = val==='Other' ? 'block' : 'none';
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────
+function saveGoogleConfig() {
+  googleConfig.scriptUrl = document.getElementById('cfgScriptUrl').value.trim();
+  try { localStorage.setItem('abr_google_config', JSON.stringify(googleConfig)); } catch(e) {}
+  updateSyncBanner();
+  var msg = document.getElementById('googleSavedMsg');
+  msg.style.display = 'inline'; setTimeout(function(){ msg.style.display='none'; }, 2500);
+  showToast('Google Drive settings saved!');
+}
+
+function testGoogleConnection() {
+  if (!googleConfig.scriptUrl) { showToast('Enter the Apps Script URL first.', true); return; }
+  showToast('Testing connection...');
+  fetch(googleConfig.scriptUrl)
+    .then(function(r){ return r.json(); })
+    .then(function(d){ showToast('✅ Connected: ' + (d.message||'OK')); })
+    .catch(function(e){ showToast('Connection failed — check URL', true); });
+}
+
+function saveEmailConfig() {
+  emailConfig.publicKey  = document.getElementById('cfgPublicKey').value.trim();
+  emailConfig.serviceId  = document.getElementById('cfgServiceId').value.trim();
+  emailConfig.templateId = document.getElementById('cfgTemplateId').value.trim();
+  try { localStorage.setItem('abr_email_config', JSON.stringify(emailConfig)); } catch(e) {}
+  var msg = document.getElementById('emailSavedMsg');
+  msg.style.display = 'inline'; setTimeout(function(){ msg.style.display='none'; }, 2500);
+  showToast('Email settings saved!');
+}
+
+function testEmail() {
+  if (!emailConfig.publicKey) { showToast('Save EmailJS credentials first.', true); return; }
+  sendEmail({ fullName:'Test Visitor', purpose:'Test', time:'12:00 PM', id:'VIS-TEST' }, 'test@example.com');
+}
+
+// ─── GOOGLE SHEETS SYNC ──────────────────────────────────────
+function syncToGoogle(visitor) {
+  if (!googleConfig.scriptUrl) return Promise.resolve({ skipped: true });
+  var payload = {
+    action:       'checkin',
+    badgeId:      visitor.id,
+    timestamp:    visitor.timestamp,
+    date:         visitor.date,
+    timeIn:       visitor.time,
+    firstName:    visitor.firstName,
+    lastName:     visitor.lastName,
+    fullName:     visitor.fullName,
+    phone:        visitor.phone       || '',
+    visiting:     visitor.visiting,
+    staffEmail:   visitor.staffEmail  || '',
+    purpose:      visitor.purpose,
+    notes:        visitor.notes       || '',
+    licensePlate: visitor.plate       || '',
+    photo:        visitor.photo       || ''
+  };
+  return fetch(googleConfig.scriptUrl, {
+    method: 'POST',
+    body:   JSON.stringify(payload)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    visitor.synced    = true;
+    visitor.photoUrl  = data.photoUrl || '';
+    saveLog();
+    return data;
+  })
+  .catch(function(err) {
+    visitor.synced = false;
+    saveLog();
+    throw err;
+  });
+}
+
+function retrySyncAll() {
+  var unsynced = visitorLog.filter(function(v){ return !v.synced; });
+  if (!unsynced.length) { showToast('All records already synced!'); return; }
+  showToast('Syncing ' + unsynced.length + ' record(s)...');
+  var promises = unsynced.map(function(v){ return syncToGoogle(v).catch(function(){}); });
+  Promise.all(promises).then(function(){ renderLog(); showToast('Sync complete!'); });
+}
+
+// ─── EMAIL ───────────────────────────────────────────────────
+async function sendEmail(visitor, toEmail) {
+  if (!emailConfig.publicKey || !emailConfig.serviceId || !emailConfig.templateId) return;
+  try {
+    emailjs.init({ publicKey: emailConfig.publicKey });
+    await emailjs.send(emailConfig.serviceId, emailConfig.templateId, {
+      to_email:     toEmail,
+      visitor_name: visitor.fullName,
+      purpose:      visitor.purpose,
+      time_in:      visitor.time,
+      badge_id:     visitor.id,
+      school_name:  'Associated Beth Rivkah Schools'
+    });
+    showToast('📧 Notification sent to ' + toEmail);
+  } catch(err) {
+    showToast('Email error: ' + (err.text||err.message||'check credentials'), true);
+  }
+}
+
+// ─── SUBMIT ──────────────────────────────────────────────────
+async function submitForm() {
+  var first      = document.getElementById('firstName').value.trim();
+  var last       = document.getElementById('lastName').value.trim();
+  var staff      = document.getElementById('visitingStaff').value.trim();
+  var staffEmail = document.getElementById('staffEmail').value.trim();
+
+  if (!first || !last)  { showToast('Please enter the visitor\'s full name.', true); return; }
+  if (!staff)           { showToast('Please enter who they are visiting.', true); return; }
+  if (!staffEmail)      { showToast('Please enter the staff email.', true); return; }
+  if (!selectedPurpose) { showToast('Please select a purpose of visit.', true); return; }
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  var now     = new Date();
+  var timeStr = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  var dateStr = now.toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'});
+  badgeCounter++;
+  var badgeId = 'VIS-' + badgeCounter;
+
+  var visitor = {
+    id:          badgeId,
+    firstName:   first,
+    lastName:    last,
+    fullName:    first + ' ' + last,
+    phone:       document.getElementById('phone').value,
+    visiting:    staff,
+    staffEmail:  staffEmail,
+    purpose:     selectedPurpose,
+    notes:       document.getElementById('notes').value,
+    plate:       document.getElementById('licensePlate').value,
+    photo:       capturedPhoto,
+    time:        timeStr,
+    date:        dateStr,
+    timestamp:   now.toISOString(),
+    synced:      false,
+    photoUrl:    ''
+  };
+
+  visitorLog.unshift(visitor);
+  saveLog();
+
+  // Update badge preview
+  document.getElementById('badgeName').textContent     = visitor.fullName;
+  document.getElementById('badgeVisiting').textContent = visitor.visiting;
+  document.getElementById('badgePurpose').textContent  = visitor.purpose;
+  document.getElementById('badgeTime').textContent     = visitor.time;
+  document.getElementById('badgeId').textContent       = badgeId;
+  document.getElementById('badgeDate').textContent     = dateStr;
+
+  if (capturedPhoto) {
+    document.getElementById('badgePhotoImg').src = capturedPhoto;
+    document.getElementById('badgePhotoImg').style.display = 'block';
+    document.getElementById('badgePhotoPlaceholder').style.display = 'none';
+  } else {
+    document.getElementById('badgePhotoImg').style.display = 'none';
+    document.getElementById('badgePhotoPlaceholder').style.display = 'flex';
+  }
+
+  // Sync to Google & send email in parallel
+  btn.textContent = 'Syncing to Google…';
+  try {
+    await syncToGoogle(visitor);
+    showToast('✅ Visitor logged to Google Sheets!');
+  } catch(e) {
+    showToast('⚠️ Saved locally — Google sync failed. Retry in Log tab.', true);
+  }
+
+  sendEmail(visitor, staffEmail);
+
+  resetForm();
+  btn.disabled = false;
+  btn.textContent = '✓ Complete Check-In & Generate Badge';
+  showTab('badge');
+}
+
+function resetForm() {
+  ['firstName','lastName','phone','visitingStaff','staffEmail','licensePlate','notes'].forEach(function(id){
+    document.getElementById(id).value = '';
+  });
+  document.querySelectorAll('.purpose-btn').forEach(function(b){ b.classList.remove('selected'); });
+  document.getElementById('otherNote').style.display = 'none';
+  selectedPurpose = '';
+  capturedPhoto   = '';
+  document.getElementById('idPreview').style.display = 'none';
+  document.getElementById('cameraPrompt').style.display = 'block';
+  document.getElementById('retakeBtn').style.display = 'none';
+  document.getElementById('cameraInput').value = '';
+}
+
+function newVisitor() { resetForm(); showTab('intake'); }
+
+// ─── LOG ─────────────────────────────────────────────────────
+function renderLog() {
+  var search   = (document.getElementById('logSearch').value||'').toLowerCase();
+  var filtered = visitorLog.filter(function(v){
+    return (v.fullName+v.visiting+v.purpose+v.id).toLowerCase().includes(search);
+  });
+
+  var synced = visitorLog.filter(function(v){ return v.synced; }).length;
+  document.getElementById('statTotal').textContent  = visitorLog.length;
+  document.getElementById('statSynced').textContent = synced;
+
+  var purposes = visitorLog.map(function(v){ return v.purpose; });
+  var topP = '—';
+  if (purposes.length) {
+    topP = purposes.sort(function(a,b){
+      return purposes.filter(function(x){return x===b;}).length -
+             purposes.filter(function(x){return x===a;}).length;
+    })[0].split('/')[0].trim();
+  }
+  document.getElementById('statPurpose').textContent = topP;
+
+  var el = document.getElementById('logContent');
+  if (!filtered.length) {
+    el.innerHTML = '<div class="log-empty">'+(search?'No matching visitors.':'No visitors checked in yet today.')+'</div>';
+    return;
+  }
+
+  el.innerHTML = '<table class="log-table"><thead><tr>' +
+    '<th>Sync</th><th>Name</th><th>Visiting</th><th>Purpose</th><th>Time</th><th>Badge</th><th>Photo</th>' +
+    '</tr></thead><tbody>' +
+    filtered.map(function(v){
+      var syncCell = v.synced
+        ? '<span class="synced-dot"></span>Synced'
+        : '<span class="unsynced-dot"></span>Local';
+      var photoCell = v.photoUrl
+        ? '<a href="'+v.photoUrl+'" target="_blank" style="color:#2e6da4;font-weight:600;font-size:12px">View ↗</a>'
+        : (v.photo ? '📷 Not synced' : '—');
+      return '<tr>' +
+        '<td style="font-size:12px;color:#5a7496;white-space:nowrap">'+syncCell+'</td>' +
+        '<td><strong style="color:#1a3a5c">'+esc(v.fullName)+'</strong></td>' +
+        '<td style="color:#5a7496">'+esc(v.visiting)+'</td>' +
+        '<td><span class="purpose-pill">'+esc(v.purpose)+'</span></td>' +
+        '<td style="color:#5a7496;white-space:nowrap">'+v.time+'</td>' +
+        '<td style="font-family:monospace;font-size:11px;color:#8aa5c0">'+v.id+'</td>' +
+        '<td>'+photoCell+'</td>' +
+        '</tr>';
+    }).join('') + '</tbody></table>';
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── EXPORT CSV ──────────────────────────────────────────────
+function exportCSV() {
+  if (!visitorLog.length) { showToast('No visitors to export.', true); return; }
+  var headers = ['Badge ID','Date','Time In','First Name','Last Name','Phone',
+    'Visiting','Staff Email','Purpose','Notes','License Plate','Synced','Photo URL','Timestamp'];
+  var rows = visitorLog.map(function(v){
+    return [v.id,v.date,v.time,v.firstName,v.lastName,v.phone||'',
+      v.visiting,v.staffEmail||'',v.purpose,v.notes||'',v.plate||'',
+      v.synced?'Yes':'No',v.photoUrl||'',v.timestamp]
+      .map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(',');
+  });
+  var csv  = [headers.join(',')].concat(rows).join('\n');
+  var blob = new Blob([csv], {type:'text/csv'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'ABR_Visitors_'+todayKey()+'.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported ' + visitorLog.length + ' records');
+}
+
+function clearLog() {
+  if (!confirm('Clear today\'s local log? Google Sheet records are not affected.')) return;
+  visitorLog = [];
+  saveLog();
+  renderLog();
+  showToast('Local log cleared.');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────
+var toastTimer;
+function showToast(msg, isErr) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isErr?' err':'') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3400);
+}
+</script>
+</body>
+</html>
