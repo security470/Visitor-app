@@ -164,11 +164,20 @@ code { background: #e0eeff; padding: 2px 7px; border-radius: 4px; font-size: 12p
     size: 2.4in 3.93in;
     margin: 0;
   }
-  html, body {
-    width: 2.4in;
-    height: 3.93in;
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  html {
+    width: 2.4in !important;
+    height: 3.93in !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: hidden !important;
+  }
+  body {
+    width: 2.4in !important;
+    height: 3.93in !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
     background: white !important;
   }
   body * { visibility: hidden !important; }
@@ -187,32 +196,46 @@ code { background: #e0eeff; padding: 2px 7px; border-radius: 4px; font-size: 12p
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
   }
   #printBadge .badge-header {
+    background: #1a3a5c !important;
     padding: 10px 12px !important;
     flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
   }
-  #printBadge .badge-school-name { font-size: 10px !important; }
-  #printBadge .badge-visitor-label { font-size: 8px !important; }
+  #printBadge .badge-school-name { font-size: 10px !important; color: white !important; }
+  #printBadge .badge-visitor-label { font-size: 8px !important; color: rgba(255,255,255,0.65) !important; }
   #printBadge .badge-body {
     padding: 10px 12px !important;
     flex: 1 !important;
     gap: 10px !important;
+    display: flex !important;
+    align-items: flex-start !important;
   }
   #printBadge .badge-photo,
   #printBadge .badge-photo-placeholder {
-    width: 70px !important;
-    height: 70px !important;
-  }
-  #printBadge .badge-name { font-size: 15px !important; }
-  #printBadge .badge-field { font-size: 10px !important; margin-top: 5px !important; }
-  #printBadge .badge-field strong { font-size: 8px !important; }
-  #printBadge .badge-footer {
-    padding: 7px 12px !important;
+    width: 65px !important;
+    height: 65px !important;
     flex-shrink: 0 !important;
   }
-  #printBadge .badge-id { font-size: 9px !important; }
-  #printBadge .badge-date { font-size: 9px !important; }
+  #printBadge .badge-name { font-size: 14px !important; color: #1a3a5c !important; }
+  #printBadge .badge-field { font-size: 9px !important; margin-top: 5px !important; color: #5a7496 !important; }
+  #printBadge .badge-field strong { font-size: 8px !important; color: #2c5282 !important; display: block !important; }
+  #printBadge .badge-footer {
+    padding: 6px 12px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    background: #f0f4f8 !important;
+    border-top: 1px solid #e2eaf4 !important;
+  }
+  #printBadge .badge-id { font-size: 8px !important; color: #8aa5c0 !important; }
+  #printBadge .badge-date { font-size: 8px !important; color: #8aa5c0 !important; }
+  #printBadge .badge-logo-wrap { background: white !important; }
 }
 </style>
 </head>
